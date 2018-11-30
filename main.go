@@ -69,4 +69,6 @@ func main() {
 	utils.TimedPrintln("Download feito com sucesso")
 
 	os.Remove(zipFilename)
+
+	utils.TimedPrintln("Backup feito com o nome: " + zipFilename)
 }
