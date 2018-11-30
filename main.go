@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Azure/azure-storage-blob-go/azblob"
+	"github.com/briandowns/spinner"
 
 	"./utils"
 )
@@ -32,7 +33,11 @@ func main() {
 	utils.CheckErr("Erro com as credenciais informadas", err)
 	utils.TimedPrintln("Credenciais setadas")
 
-	pipeline := azblob.NewPipeline(credentials, azblob.PipelineOptions{})
+	pipeline := azblob.NewPipeline(credentials, azblob.PipelineOptions{
+		Retry: azblob.RetryOptions{
+			TryTimeout: 5 * time.Minute,
+		},
+	})
 
 	URL, _ := url.Parse(fmt.Sprintf("https://%s.blob.core.windows.net/%s", azureAccount, containerName))
 
@@ -49,10 +54,14 @@ func main() {
 	file, err := os.Open(zipFilename)
 	utils.CheckErr("Erro ao verificar se o arquivo zip existe", err)
 
-	utils.TimedPrintln("Fazendo upload do blob para a Azure...")
+	s := spinner.New(spinner.CharSets[26], 100*time.Millisecond)
+	s.Prefix = "Fazendo upload na Azure"
+	s.Color("red", "bold")
+	s.Start()
 	_, err = azblob.UploadFileToBlockBlob(context, file, blobURL, azblob.UploadToBlockBlobOptions{})
 	utils.CheckErr("Erro ao fazer upload do blob", err)
 	utils.TimedPrintln("Upload feito com sucesso!")
+	s.Stop()
 
 	utils.TimedPrintln("Fazendo download do blob...")
 	_, err = blobURL.Download(context, 0, azblob.CountToEnd, azblob.BlobAccessConditions{}, false)
