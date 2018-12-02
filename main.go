@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"net/url"
 	"os"
@@ -17,18 +18,37 @@ func main() {
 	utils.TimedPrintln("Iniciando rotina...")
 
 	var (
-		azureAccount      = os.Getenv("AZURE_STORAGE_ACCOUNT")
-		azureAccessKey    = os.Getenv("AZURE_STORAGE_ACCESS_KEY")
-		containerName     = os.Getenv("AZURE_STORAGE_CONTAINER_NAME")
-		directoryToUpload = os.Getenv("AZURE_DIRECTORY_TO_UPLOAD")
+		azureAccount           = os.Getenv("AZURE_STORAGE_ACCOUNT")
+		azureAccessKey         = os.Getenv("AZURE_STORAGE_ACCESS_KEY")
+		containerName          = os.Getenv("AZURE_STORAGE_CONTAINER_NAME")
+		uploadPtr              = flag.Bool("u", true, "Valor booleano que define se irá fazer upload do arquivo")
+		zipPtr                 = flag.Bool("z", true, "Valor booleano que define se irá ou não zipar o arquivo")
+		downloadPtr            = flag.String("d", "", "Valor em texto que define qual arquivo será feito o download")
+		directoryToUploadPtr   = flag.String("directory", "", "Valor em texto que define qual o diretório de upload")
+		uploadValue            bool
+		downloadValue          string
+		zipValue               bool
+		directoryToUploadValue string
 	)
 
-	if len(azureAccount) == 0 || len(azureAccessKey) == 0 || len(containerName) == 0 || len(directoryToUpload) == 0 {
-		utils.TimedPrintln("Defina as variáveis de ambiente: AZURE_STORAGE_ACCOUNT, AZURE_STORAGE_ACCESS_KEY e AZURE_STORAGE_CONTAINER_NAME, AZURE_DIRECTORY_TO_UPLOAD")
+	flag.Parse()
+
+	uploadValue = *uploadPtr
+	downloadValue = *downloadPtr
+	zipValue = *zipPtr
+	directoryToUploadValue = *directoryToUploadPtr
+
+	if len(azureAccount) == 0 || len(azureAccessKey) == 0 || len(containerName) == 0 {
+		utils.TimedPrintln("Defina as variáveis de ambiente: AZURE_STORAGE_ACCOUNT, AZURE_STORAGE_ACCESS_KEY e AZURE_STORAGE_CONTAINER_NAME")
 		os.Exit(1)
 	}
 
-	utils.TimedPrintln("Setando as credenciaiss...")
+	if directoryToUploadValue == "" && uploadValue && downloadValue == "" {
+		utils.TimedPrintln("Defina o diretório para upload usando -directory=<diretorio>")
+		os.Exit(1)
+	}
+
+	utils.TimedPrintln("Setando as credenciais...")
 	credentials, err := azblob.NewSharedKeyCredential(azureAccount, azureAccessKey)
 	utils.CheckErr("Erro com as credenciais informadas", err)
 	utils.TimedPrintln("Credenciais setadas")
@@ -45,30 +65,40 @@ func main() {
 
 	context := context.Background()
 
-	utils.TimedPrintln("Zipando arquivo...")
-	timeBlob := time.Now()
-	zipFilename := fmt.Sprintf("blob%d%d%d%02d%02d%02d", timeBlob.Day(), timeBlob.Month(), timeBlob.Year(), timeBlob.Hour(), timeBlob.Minute(), timeBlob.Second())
-	utils.ZipWriter(directoryToUpload, zipFilename) // criando arquivo zip
-
-	blobURL := containerURL.NewBlockBlobURL(zipFilename)
-	file, err := os.Open(zipFilename)
-	utils.CheckErr("Erro ao verificar se o arquivo zip existe", err)
-
 	s := spinner.New(spinner.CharSets[26], 100*time.Millisecond)
-	s.Prefix = "Fazendo upload na Azure"
-	s.Color("red", "bold")
-	s.Start()
-	_, err = azblob.UploadFileToBlockBlob(context, file, blobURL, azblob.UploadToBlockBlobOptions{})
-	utils.CheckErr("Erro ao fazer upload do blob", err)
-	utils.TimedPrintln("Upload feito com sucesso!")
-	s.Stop()
 
-	utils.TimedPrintln("Fazendo download do blob...")
-	_, err = blobURL.Download(context, 0, azblob.CountToEnd, azblob.BlobAccessConditions{}, false)
-	utils.CheckErr("", err)
-	utils.TimedPrintln("Download feito com sucesso")
+	if uploadValue {
+		filename := ""
+		blobURL := containerURL.NewBlockBlobURL(filename)
 
-	os.Remove(zipFilename)
+		if zipValue {
+			utils.TimedPrintln("Zipando arquivo...")
+			timeBlob := time.Now()
+			filename = fmt.Sprintf("blob%d%d%d%02d%02d%02d", timeBlob.Day(), timeBlob.Month(), timeBlob.Year(), timeBlob.Hour(), timeBlob.Minute(), timeBlob.Second())
+			utils.ZipWriter(directoryToUploadValue, filename) // criando arquivo zip
+			blobURL = containerURL.NewBlockBlobURL(filename)
+		} else {
+			filename = directoryToUploadValue
+		}
 
-	utils.TimedPrintln("Backup feito com o nome: " + zipFilename)
+		file, err := os.Open(filename)
+		utils.CheckErr("Erro ao verificar se o arquivo existe", err)
+
+		s.Prefix = "Fazendo upload na Azure"
+		s.Color("red", "bold")
+		s.Start()
+		_, err = azblob.UploadFileToBlockBlob(context, file, blobURL, azblob.UploadToBlockBlobOptions{})
+		utils.CheckErr("Erro ao fazer upload do blob", err)
+		utils.TimedPrintln("Upload feito com sucesso!")
+		s.Stop()
+		utils.TimedPrintln("Backup feito com o nome: " + filename)
+	}
+
+	if downloadValue != "" {
+		utils.TimedPrintln("Fazendo download do blob...")
+		blobURL := containerURL.NewBlockBlobURL(downloadValue)
+		_, err = blobURL.Download(context, 0, azblob.CountToEnd, azblob.BlobAccessConditions{}, false)
+		utils.CheckErr("", err)
+		utils.TimedPrintln("Download feito com sucesso")
+	}
 }
