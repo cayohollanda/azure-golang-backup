@@ -11,7 +11,7 @@ import (
 	"github.com/Azure/azure-storage-blob-go/azblob"
 	"github.com/briandowns/spinner"
 
-	"./utils"
+	"github.com/cayohollanda/azure-golang-backup/utils"
 )
 
 func main() {
