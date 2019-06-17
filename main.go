@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/Azure/azure-storage-blob-go/azblob"
@@ -73,8 +74,27 @@ func main() {
 
 		if zipValue {
 			utils.TimedPrintln("Zipando arquivo...")
-			timeBlob := time.Now()
-			filename = fmt.Sprintf("blob%d%d%d%02d%02d%02d", timeBlob.Day(), timeBlob.Month(), timeBlob.Year(), timeBlob.Hour(), timeBlob.Minute(), timeBlob.Second())
+			// timeBlob := time.Now()
+
+			var tagDate string
+			t := time.Now()
+			month, _ := strconv.Atoi(fmt.Sprintf("%d", t.Month()))
+			day, _ := strconv.Atoi(fmt.Sprintf("%d", t.Day()))
+			if day < 10 {
+				if month < 10 {
+					tagDate = fmt.Sprintf("0%d0%d%d%02d%02d%02d", t.Day(), t.Month(), t.Year(), t.Hour(), t.Minute(), t.Second())
+				} else {
+					tagDate = fmt.Sprintf("0%d%d%d%02d%02d%02d", t.Day(), t.Month(), t.Year(), t.Hour(), t.Minute(), t.Second())
+				}
+			} else {
+				if month < 10 {
+					tagDate = fmt.Sprintf("%d0%d%d%02d%02d%02d", t.Day(), t.Month(), t.Year(), t.Hour(), t.Minute(), t.Second())
+				} else {
+					tagDate = fmt.Sprintf("%d%d%d%02d%02d%02d", t.Day(), t.Month(), t.Year(), t.Hour(), t.Minute(), t.Second())
+				}
+			}
+
+			filename = fmt.Sprintf("blob%s", tagDate)
 			utils.ZipWriter(directoryToUploadValue, filename) // criando arquivo zip
 			blobURL = containerURL.NewBlockBlobURL(filename)
 		} else {
