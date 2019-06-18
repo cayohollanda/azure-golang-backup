@@ -74,7 +74,6 @@ func main() {
 
 		if zipValue {
 			utils.TimedPrintln("Zipando arquivo...")
-			// timeBlob := time.Now()
 
 			var tagDate string
 			t := time.Now()
@@ -112,6 +111,8 @@ func main() {
 		utils.TimedPrintln("Upload feito com sucesso!")
 		s.Stop()
 		utils.TimedPrintln("Backup feito com o nome: " + filename)
+
+		_ = os.Remove(filename)
 	}
 
 	if downloadValue != "" {
