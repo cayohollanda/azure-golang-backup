@@ -19,17 +19,23 @@ func main() {
 	utils.TimedPrintln("Iniciando rotina...")
 
 	var (
-		azureAccount           = os.Getenv("AZURE_STORAGE_ACCOUNT")
-		azureAccessKey         = os.Getenv("AZURE_STORAGE_ACCESS_KEY")
-		containerName          = os.Getenv("AZURE_STORAGE_CONTAINER_NAME")
-		uploadPtr              = flag.Bool("u", true, "Valor booleano que define se irá fazer upload do arquivo")
-		zipPtr                 = flag.Bool("z", true, "Valor booleano que define se irá ou não zipar o arquivo")
-		downloadPtr            = flag.String("d", "", "Valor em texto que define qual arquivo será feito o download")
-		directoryToUploadPtr   = flag.String("directory", "", "Valor em texto que define qual o diretório de upload")
-		uploadValue            bool
-		downloadValue          string
-		zipValue               bool
-		directoryToUploadValue string
+		azureAccount                = os.Getenv("AZURE_STORAGE_ACCOUNT")
+		azureAccessKey              = os.Getenv("AZURE_STORAGE_ACCESS_KEY")
+		containerName               = os.Getenv("AZURE_STORAGE_CONTAINER_NAME")
+		uploadPtr                   = flag.Bool("u", true, "Valor booleano que define se irá fazer upload do arquivo")
+		zipPtr                      = flag.Bool("z", true, "Valor booleano que define se irá ou não zipar o arquivo")
+		downloadPtr                 = flag.String("d", "", "Valor em texto que define qual arquivo será feito o download")
+		directoryToUploadPtr        = flag.String("directory", "", "Valor em texto que define qual o diretório de upload")
+		azureAccountNamePtr         = flag.String("azureAccountName", "", "Account name da Azure")
+		azureAccessKeyPtr           = flag.String("azureAccessKey", "", "Access Key de acesso à conta de armazenamento da Azure")
+		azureContainerNamePtr       = flag.String("azureContainerName", "", "Container name da conta de armazenamento da Azure")
+		uploadValue                 bool
+		downloadValue               string
+		zipValue                    bool
+		directoryToUploadValue      string
+		azureAccountParameter       string
+		azureAccessKeyParameter     string
+		azureContainerNameParameter string
 	)
 
 	flag.Parse()
@@ -38,10 +44,19 @@ func main() {
 	downloadValue = *downloadPtr
 	zipValue = *zipPtr
 	directoryToUploadValue = *directoryToUploadPtr
+	azureAccountParameter = *azureAccountNamePtr
+	azureAccessKeyParameter = *azureAccessKeyPtr
+	azureContainerNameParameter = *azureContainerNamePtr
 
 	if len(azureAccount) == 0 || len(azureAccessKey) == 0 || len(containerName) == 0 {
-		utils.TimedPrintln("Defina as variáveis de ambiente: AZURE_STORAGE_ACCOUNT, AZURE_STORAGE_ACCESS_KEY e AZURE_STORAGE_CONTAINER_NAME")
-		os.Exit(1)
+		if len(azureAccountParameter) == 0 || len(azureAccessKeyParameter) == 0 || len(azureContainerNameParameter) == 0 {
+			utils.TimedPrintln("Defina as variáveis de ambiente: AZURE_STORAGE_ACCOUNT, AZURE_STORAGE_ACCESS_KEY e AZURE_STORAGE_CONTAINER_NAME")
+			os.Exit(1)
+		} else {
+			azureAccount = azureAccessKeyParameter
+			azureAccessKey = azureAccessKeyParameter
+			containerName = azureContainerNameParameter
+		}
 	}
 
 	if directoryToUploadValue == "" && uploadValue && downloadValue == "" {
