@@ -53,7 +53,7 @@ func main() {
 			utils.TimedPrintln("Defina as variáveis de ambiente: AZURE_STORAGE_ACCOUNT, AZURE_STORAGE_ACCESS_KEY e AZURE_STORAGE_CONTAINER_NAME")
 			os.Exit(1)
 		} else {
-			azureAccount = azureAccessKeyParameter
+			azureAccount = azureAccountParameter
 			azureAccessKey = azureAccessKeyParameter
 			containerName = azureContainerNameParameter
 		}
