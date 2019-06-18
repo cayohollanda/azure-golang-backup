@@ -4,13 +4,13 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log"
 	"net/url"
 	"os"
 	"strconv"
 	"time"
 
 	"github.com/Azure/azure-storage-blob-go/azblob"
-	"github.com/briandowns/spinner"
 
 	"github.com/cayohollanda/azure-golang-backup/utils"
 )
@@ -81,8 +81,6 @@ func main() {
 
 	context := context.Background()
 
-	s := spinner.New(spinner.CharSets[26], 100*time.Millisecond)
-
 	if uploadValue {
 		filename := ""
 		blobURL := containerURL.NewBlockBlobURL(filename)
@@ -118,13 +116,10 @@ func main() {
 		file, err := os.Open(filename)
 		utils.CheckErr("Erro ao verificar se o arquivo existe", err)
 
-		s.Prefix = "Fazendo upload na Azure"
-		s.Color("red", "bold")
-		s.Start()
+		log.Println("Fazendo upload na Azure")
 		_, err = azblob.UploadFileToBlockBlob(context, file, blobURL, azblob.UploadToBlockBlobOptions{})
 		utils.CheckErr("Erro ao fazer upload do blob", err)
 		utils.TimedPrintln("Upload feito com sucesso!")
-		s.Stop()
 		utils.TimedPrintln("Backup feito com o nome: " + filename)
 
 		_ = os.Remove(filename)
