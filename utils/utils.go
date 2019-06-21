@@ -2,9 +2,9 @@ package utils
 
 import (
 	"archive/zip"
+	"bufio"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"time"
 )
@@ -40,20 +40,33 @@ func AddFiles(w *zip.Writer, basePath, baseInZip string) {
 	for _, file := range files {
 		TimedPrintln("Adicionando arquivo: " + basePath + file.Name())
 		if !file.IsDir() {
-			log.Println("teste1")
-			dat, err := ioutil.ReadFile(basePath + file.Name())
-			log.Println("teste2")
+			file, err := os.Open(basePath + file.Name())
 			CheckErr("", err)
-			log.Println("teste3")
+
+			defer file.Close()
+
+			scanner := bufio.NewScanner(file)
+			buf := make([]byte, 0, 1024*1024)
+			scanner.Buffer(buf, 10*1024*1024)
 
 			// Add some files to the archive.
 			f, err := w.Create(baseInZip + file.Name())
-			log.Println("teste4")
 			CheckErr("", err)
 
-			_, err = f.Write(dat)
-			log.Println("teste5")
-			CheckErr("", err)
+			for scanner.Scan() {
+				_, err = f.Write(scanner.Bytes())
+				CheckErr("", err)
+			}
+			// log.Println("teste1")
+			// dat, err := ioutil.ReadFile(basePath + file.Name())
+			// CheckErr("", err)
+
+			// // Add some files to the archive.
+			// f, err := w.Create(baseInZip + file.Name())
+			// CheckErr("", err)
+
+			// _, err = f.Write(dat)
+			// CheckErr("", err)
 		} else if file.IsDir() {
 
 			// Recurse
