@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"time"
 )
@@ -39,8 +40,11 @@ func AddFiles(w *zip.Writer, basePath, baseInZip string) {
 	for _, file := range files {
 		TimedPrintln("Adicionando arquivo: " + basePath + file.Name())
 		if !file.IsDir() {
+			log.Println("teste1")
 			dat, err := ioutil.ReadFile(basePath + file.Name())
+			log.Println("teste2")
 			CheckErr("", err)
+			log.Println("teste3")
 
 			// Add some files to the archive.
 			f, err := w.Create(baseInZip + file.Name())
