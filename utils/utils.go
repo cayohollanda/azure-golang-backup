@@ -48,9 +48,11 @@ func AddFiles(w *zip.Writer, basePath, baseInZip string) {
 
 			// Add some files to the archive.
 			f, err := w.Create(baseInZip + file.Name())
+			log.Println("teste4")
 			CheckErr("", err)
 
 			_, err = f.Write(dat)
+			log.Println("teste5")
 			CheckErr("", err)
 		} else if file.IsDir() {
 
