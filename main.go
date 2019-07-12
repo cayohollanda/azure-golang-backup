@@ -90,15 +90,24 @@ func main() {
 		}
 
 		if len(blobsList.Segment.BlobItems) > 0 {
-			newBlob := blobsList.Segment.BlobItems[0]
 			for _, blob := range blobsList.Segment.BlobItems {
-				if blob.Properties.LastModified.String() > newBlob.Properties.LastModified.String() {
-					newBlob = blob
+				if !((time.Now().Day() - blob.Properties.LastModified.Day()) <= 10) && blob.Properties.LastModified.Month().String() == time.Now().Month().String() && blob.Properties.LastModified.Year() == time.Now().Year() {
+					//azblob
+					// procurar funcao de deletar blob do container
 				}
 			}
-
-			log.Println(newBlob.Name)
 		}
+
+		// if len(blobsList.Segment.BlobItems) > 0 {
+		// 	newBlob := blobsList.Segment.BlobItems[0]
+		// 	for _, blob := range blobsList.Segment.BlobItems {
+		// 		if blob.Properties.LastModified.String() > newBlob.Properties.LastModified.String() {
+		// 			newBlob = blob
+		// 		}
+		// 	}
+
+		// 	log.Println(newBlob.Name)
+		// }
 
 		// if zipValue {
 		// 	utils.TimedPrintln("Zipando arquivo...")
