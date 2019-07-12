@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/url"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/Azure/azure-storage-blob-go/azblob"
@@ -19,19 +18,19 @@ func main() {
 	utils.TimedPrintln("Iniciando rotina...")
 
 	var (
-		azureAccount                = os.Getenv("AZURE_STORAGE_ACCOUNT")
-		azureAccessKey              = os.Getenv("AZURE_STORAGE_ACCESS_KEY")
-		containerName               = os.Getenv("AZURE_STORAGE_CONTAINER_NAME")
-		uploadPtr                   = flag.Bool("u", true, "Valor booleano que define se irá fazer upload do arquivo")
-		zipPtr                      = flag.Bool("z", true, "Valor booleano que define se irá ou não zipar o arquivo")
-		downloadPtr                 = flag.String("d", "", "Valor em texto que define qual arquivo será feito o download")
-		directoryToUploadPtr        = flag.String("directory", "", "Valor em texto que define qual o diretório de upload")
-		azureAccountNamePtr         = flag.String("azureAccountName", "", "Account name da Azure")
-		azureAccessKeyPtr           = flag.String("azureAccessKey", "", "Access Key de acesso à conta de armazenamento da Azure")
-		azureContainerNamePtr       = flag.String("azureContainerName", "", "Container name da conta de armazenamento da Azure")
-		uploadValue                 bool
-		downloadValue               string
-		zipValue                    bool
+		azureAccount   = os.Getenv("AZURE_STORAGE_ACCOUNT")
+		azureAccessKey = os.Getenv("AZURE_STORAGE_ACCESS_KEY")
+		containerName  = os.Getenv("AZURE_STORAGE_CONTAINER_NAME")
+		uploadPtr      = flag.Bool("u", true, "Valor booleano que define se irá fazer upload do arquivo")
+		// zipPtr                = flag.Bool("z", true, "Valor booleano que define se irá ou não zipar o arquivo")
+		downloadPtr           = flag.String("d", "", "Valor em texto que define qual arquivo será feito o download")
+		directoryToUploadPtr  = flag.String("directory", "", "Valor em texto que define qual o diretório de upload")
+		azureAccountNamePtr   = flag.String("azureAccountName", "", "Account name da Azure")
+		azureAccessKeyPtr     = flag.String("azureAccessKey", "", "Access Key de acesso à conta de armazenamento da Azure")
+		azureContainerNamePtr = flag.String("azureContainerName", "", "Container name da conta de armazenamento da Azure")
+		uploadValue           bool
+		downloadValue         string
+		// zipValue                    bool
 		directoryToUploadValue      string
 		azureAccountParameter       string
 		azureAccessKeyParameter     string
@@ -42,7 +41,7 @@ func main() {
 
 	uploadValue = *uploadPtr
 	downloadValue = *downloadPtr
-	zipValue = *zipPtr
+	// zipValue = *zipPtr
 	directoryToUploadValue = *directoryToUploadPtr
 	azureAccountParameter = *azureAccountNamePtr
 	azureAccessKeyParameter = *azureAccessKeyPtr
@@ -82,47 +81,63 @@ func main() {
 	context := context.Background()
 
 	if uploadValue {
-		filename := ""
-		blobURL := containerURL.NewBlockBlobURL(filename)
+		// filename := ""
+		// blobURL := containerURL.NewBlockBlobURL(filename)
 
-		if zipValue {
-			utils.TimedPrintln("Zipando arquivo...")
+		blobsList, err := containerURL.ListBlobsFlatSegment(context, azblob.Marker{}, azblob.ListBlobsSegmentOptions{})
+		if err != nil {
+			log.Println(err.Error())
+		}
 
-			var tagDate string
-			t := time.Now()
-			month, _ := strconv.Atoi(fmt.Sprintf("%d", t.Month()))
-			day, _ := strconv.Atoi(fmt.Sprintf("%d", t.Day()))
-			if day < 10 {
-				if month < 10 {
-					tagDate = fmt.Sprintf("0%d0%d%d%02d%02d%02d", t.Day(), t.Month(), t.Year(), t.Hour(), t.Minute(), t.Second())
-				} else {
-					tagDate = fmt.Sprintf("0%d%d%d%02d%02d%02d", t.Day(), t.Month(), t.Year(), t.Hour(), t.Minute(), t.Second())
-				}
-			} else {
-				if month < 10 {
-					tagDate = fmt.Sprintf("%d0%d%d%02d%02d%02d", t.Day(), t.Month(), t.Year(), t.Hour(), t.Minute(), t.Second())
-				} else {
-					tagDate = fmt.Sprintf("%d%d%d%02d%02d%02d", t.Day(), t.Month(), t.Year(), t.Hour(), t.Minute(), t.Second())
+		if len(blobsList.Segment.BlobItems) > 0 {
+			newBlob := blobsList.Segment.BlobItems[0]
+			for _, blob := range blobsList.Segment.BlobItems {
+				if blob.Properties.LastModified.String() > newBlob.Properties.LastModified.String() {
+					newBlob = blob
 				}
 			}
 
-			filename = fmt.Sprintf("blob%s", tagDate)
-			utils.ZipWriter(directoryToUploadValue, filename) // criando arquivo zip
-			blobURL = containerURL.NewBlockBlobURL(filename)
-		} else {
-			filename = directoryToUploadValue
+			log.Println(newBlob.Name)
 		}
 
-		file, err := os.Open(filename)
-		utils.CheckErr("Erro ao verificar se o arquivo existe", err)
+		// if zipValue {
+		// 	utils.TimedPrintln("Zipando arquivo...")
 
-		log.Println("Fazendo upload na Azure")
-		_, err = azblob.UploadFileToBlockBlob(context, file, blobURL, azblob.UploadToBlockBlobOptions{})
-		utils.CheckErr("Erro ao fazer upload do blob", err)
-		utils.TimedPrintln("Upload feito com sucesso!")
-		utils.TimedPrintln("Backup feito com o nome: " + filename)
+		// 	var tagDate string
+		// 	t := time.Now()
+		// 	month, _ := strconv.Atoi(fmt.Sprintf("%d", t.Month()))
+		// 	day, _ := strconv.Atoi(fmt.Sprintf("%d", t.Day()))
+		// 	if day < 10 {
+		// 		if month < 10 {
+		// 			tagDate = fmt.Sprintf("0%d0%d%d%02d%02d%02d", t.Day(), t.Month(), t.Year(), t.Hour(), t.Minute(), t.Second())
+		// 		} else {
+		// 			tagDate = fmt.Sprintf("0%d%d%d%02d%02d%02d", t.Day(), t.Month(), t.Year(), t.Hour(), t.Minute(), t.Second())
+		// 		}
+		// 	} else {
+		// 		if month < 10 {
+		// 			tagDate = fmt.Sprintf("%d0%d%d%02d%02d%02d", t.Day(), t.Month(), t.Year(), t.Hour(), t.Minute(), t.Second())
+		// 		} else {
+		// 			tagDate = fmt.Sprintf("%d%d%d%02d%02d%02d", t.Day(), t.Month(), t.Year(), t.Hour(), t.Minute(), t.Second())
+		// 		}
+		// 	}
 
-		_ = os.Remove(filename)
+		// 	filename = fmt.Sprintf("blob%s", tagDate)
+		// 	utils.ZipWriter(directoryToUploadValue, filename) // criando arquivo zip
+		// 	blobURL = containerURL.NewBlockBlobURL(filename)
+		// } else {
+		// 	filename = directoryToUploadValue
+		// }
+
+		// file, err := os.Open(filename)
+		// utils.CheckErr("Erro ao verificar se o arquivo existe", err)
+
+		// log.Println("Fazendo upload na Azure")
+		// _, err = azblob.UploadFileToBlockBlob(context, file, blobURL, azblob.UploadToBlockBlobOptions{})
+		// utils.CheckErr("Erro ao fazer upload do blob", err)
+		// utils.TimedPrintln("Upload feito com sucesso!")
+		// utils.TimedPrintln("Backup feito com o nome: " + filename)
+
+		// _ = os.Remove(filename)
 	}
 
 	if downloadValue != "" {
